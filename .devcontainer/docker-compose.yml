@@ -1,0 +1,16 @@
+version: "3"
+services:
+  devcontainer:
+    build:
+      context: ".."
+      dockerfile: "./Dockerfile"
+
+    environment:
+      WORKDIR: "./workdir"
+
+    volumes:
+      - ..:/workspace
+      - ~/.git:/root/.git # セキュリティ的に大丈夫か不安
+      - ~/.ssh:/root/.ssh # セキュリティ的に大丈夫か不安
+
+    command: "sleep infinity"

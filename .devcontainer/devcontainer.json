@@ -1,0 +1,25 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.183.0/containers/docker-existing-docker-compose
+// If you want to run as a non-root user in the container, see .devcontainer/docker-compose.yml.
+{
+	"name": "Dev Container",
+	"dockerComposeFile": [
+		"docker-compose.yml"
+	],
+	"service": "devcontainer",
+	"workspaceFolder": "/workspace",
+	"extensions": [
+		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"eamodio.gitlens"
+	],
+	"postAttachCommand": ". /venv/bin/activate",
+	"postCreateCommand": "apt update && apt install -y git tig neovim",
+	"settings": {
+		"python.venvPath": "/venv",
+		"python.analysis.diagnosticSeverityOverrides": {
+			"reportUnusedImport": "error"
+
+		}
+	}
+}

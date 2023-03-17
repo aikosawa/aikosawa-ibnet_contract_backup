@@ -1,0 +1,9 @@
+autopep8==1.5.7
+et-xmlfile==1.1.0
+lxml==4.6.3
+mojimoji==0.0.11
+more-itertools==8.8.0
+openpyxl==3.0.7
+pycodestyle==2.7.0
+python-docx==0.8.11
+toml==0.10.2

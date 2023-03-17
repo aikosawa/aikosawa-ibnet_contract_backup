@@ -1,0 +1,13 @@
+{
+    "python.languageServer": "Pylance",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.unittestEnabled": false,
+    "python.pythonPath": "venv/bin/python",
+    "python.testing.promptToConfigure": false,
+}
