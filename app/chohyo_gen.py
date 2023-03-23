@@ -20,6 +20,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from os import times
 from typing import Any, ChainMap, Iterable, List, Optional, Tuple, cast
 from docx2pdf import convert
+import win32com.client
 
 import functools
 import itertools
@@ -45,6 +46,25 @@ def logging_output(ipt: str, opt: str, level=INFO):
     生成された帳票が何をもとにして何を出力したかをロギングする関数
     """
     logger.log(level, f'  出力{ipt}    ->    {opt}')
+
+
+def excel_to_pdf(excel_path, pdf_path):
+    """
+    ExcelからPDFに変換する関数
+    """
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = False
+    excel.DisplayAlerts = False
+
+    try:
+        file = excel.Workbooks.Open(os.path.abspath(excel_path))
+        file.Worksheets(1).Select()
+        file.ActiveSheet.ExportAsFixedFormat(0, os.path.abspath(pdf_path))
+    except Exception as e:
+        print(f"Failed to convert {excel_path} to PDF: {e}")
+    finally:
+        file.Close()
+        excel.Application.Quit()
 
 
 @dataclass(frozen=True)
@@ -769,6 +789,10 @@ class ChohyoGenerator:
                 product.name, form_no, product.state)
         ))
         logging_output(src, dest)
+
+        # ExcelファイルをPDFに変換
+        pdf_dest = os.path.splitext(dest)[0] + '.pdf'
+        excel_to_pdf(dest, pdf_dest)
 
     def _gen_shinkokusho(self, product: Product):
         """
