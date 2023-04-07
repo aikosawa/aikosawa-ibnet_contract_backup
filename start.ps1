@@ -10,7 +10,7 @@ venv\Scripts\Activate.ps1
 
 # 環境変数の設定
 # $env:CONFIG_FILE_PATH = "設定情報.xlsxが格納されているファイルのフルパスを記述"
-$env:TEMPLATE_FOLDER_PATH = "\\fileserver02\IBNet銀座\非公開用\★IBN 重要★\申込書類正式\文書管理\★システムテンプレート★\templates"
+# $env:TEMPLATE_FOLDER_PATH = "\\fileserver02\IBNet銀座\非公開用\★IBN 重要★\申込書類正式\文書管理\★システムテンプレート★\templates"
 # $env:OUTPUT_FOLDER_PATH = "出力先のフォルダのフルパスを記述"
 
 

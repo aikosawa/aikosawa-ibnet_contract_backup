@@ -7,3 +7,4 @@ openpyxl==3.0.7
 pycodestyle==2.7.0
 python-docx==0.8.11
 toml==0.10.2
+docx2pdf==0.1.8

@@ -20,7 +20,9 @@ from openpyxl.worksheet.worksheet import Worksheet
 from os import times
 from typing import Any, ChainMap, Iterable, List, Optional, Tuple, cast
 from docx2pdf import convert
-import win32com.client
+import win32print
+import win32api
+import win32com.client as win32
 
 import functools
 import itertools
@@ -41,18 +43,53 @@ before_ext = re.compile(r'(?=\.(docx|xlsx))')
 
 chacot_flg = [0, 0, 0, 0]
 
-def logging_output(ipt: str, opt: str, level=INFO):
-    """
-    生成された帳票が何をもとにして何を出力したかをロギングする関数
-    """
-    logger.log(level, f'  出力{ipt}    ->    {opt}')
+
+def word_to_pdf_2_pages_per_sheet(input_file, output_file):
+    word = win32.gencache.EnsureDispatch('Word.Application')
+    word.Visible = False
+    word.DisplayAlerts = False
+
+    # デフォルトプリンタ名を取得
+    default_printer = win32print.GetDefaultPrinter()
+
+    input_file = os.path.abspath(input_file)
+    output_file = os.path.abspath(output_file)
+
+    # Word文書を開く
+    doc = word.Documents.Open(input_file)
+
+    if "【集約印刷】" in input_file:
+        # 1枚に2ページ単位で印刷する設定
+        word.ActivePrinter = default_printer
+        word.PrintOut(
+            OutputFileName=output_file,
+            Item=win32.constants.wdPrintDocumentContent,
+            Copies=1,
+            Pages="1-2",
+            Collate=True,
+            Background=False,
+            PrintToFile=True,
+            Range=win32.constants.wdPrintAllDocument,
+            ManualDuplexPrint=False,
+            PrintZoomColumn=2,
+            PrintZoomRow=1,
+            PrintZoomPaperWidth=0,
+            PrintZoomPaperHeight=0
+            )
+    else:
+        # 通常のPDF化を行う
+        doc.SaveAs(output_file, FileFormat=win32.constants.wdFormatPDF)
+
+    # Word文書を閉じる
+    doc.Close(SaveChanges=False)
+    word.Quit()
 
 
 def excel_to_pdf(excel_path, pdf_path):
     """
     ExcelからPDFに変換する関数
     """
-    excel = win32com.client.Dispatch("Excel.Application")
+    excel = win32.Dispatch("Excel.Application")
     excel.Visible = False
     excel.DisplayAlerts = False
 
@@ -65,6 +102,13 @@ def excel_to_pdf(excel_path, pdf_path):
     finally:
         file.Close()
         excel.Application.Quit()
+
+
+def logging_output(ipt: str, opt: str, level=INFO):
+    """
+    生成された帳票が何をもとにして何を出力したかをロギングする関数
+    """
+    logger.log(level, f'  出力{ipt}    ->    {opt}')
 
 
 @dataclass(frozen=True)
@@ -170,7 +214,7 @@ class ChohyoGenerator:
         logger.info('--- 計算処理 ---')
         logger.info('')
         logger.info(
-            '  以下のファイルたちをExcelアプリケーションで開きます。出力が正しいことを確認し、必ず上書き保存してください。')
+            '  以下のファイルをExcelアプリケーションで開きます。出力が正しいことを確認し、必ず上書き保存してください。')
         logger.info('')
         for b in builders:
             logger.info(f'    {b.src_jikkin_path}')
@@ -367,7 +411,7 @@ class ChohyoGenerator:
                             product.name, form_no, product.state),
                         product.table_kv, product.product_input
                     ))
-                convert(dest, os.path.splitext(dest)[0] + ".pdf")
+                word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
 
                 logging_output(src, dest)
 
@@ -497,7 +541,7 @@ class ChohyoGenerator:
             self.config.get_kv_for_product(
                 product.name, form_no, product.state)
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
     def _gen_iraisho_chacot(self, product: Product):
@@ -555,7 +599,7 @@ class ChohyoGenerator:
             self.config.get_kv_for_product(
                 product.name, form_no, product.state)
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
     def _gen_kashitsuke_gokei(self, products: List[Product]):
@@ -693,7 +737,7 @@ class ChohyoGenerator:
             self.config.get_kv_for_product(
                 product.name, form_no, product.state)
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
     def _gen_osaka(self, product: Product):
@@ -820,7 +864,7 @@ class ChohyoGenerator:
                 self.config.get_kv_for_product(
                     product.name, form_no, product.state)
             ))
-            convert(dest, os.path.splitext(dest)[0] + ".pdf")
+            word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
             logging_output(src, dest)
 
         # 個人契約者向けに出力
@@ -839,7 +883,7 @@ class ChohyoGenerator:
                 self.config.get_kv_for_product(
                     product.name, form_no, product.state)
             ))
-            convert(dest, os.path.splitext(dest)[0] + ".pdf")
+            word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
             logging_output(src, dest)
 
     def _gen_jizen(self, product: Product):
@@ -912,7 +956,7 @@ class ChohyoGenerator:
             self.config.get_kv_for_product(
                 product.name, form_no, product.state)
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
     def _gen_deed(self, product: Product, product_70n: Optional[Product] = None):
@@ -966,7 +1010,7 @@ class ChohyoGenerator:
             self.config.get_kv_for_product(
                 product.name, form_no, product.state)
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
     def _gen_rentaihosho(self, products: Iterable[Product]):
@@ -984,14 +1028,15 @@ class ChohyoGenerator:
             for joint_guarantor in product.joint_guarantors:
                 src, dst = self.path_info(product.product_input, form_no)
 
+                output_file_path=before_ext.sub('_' + '_'.join(
+                    [time_helper.strftime(product.contract_date, r'%Y%m%d'),
+                        product.customer_name,
+                        joint_guarantor.name
+                        ]
+                    ), dst, 1)
                 replace.replace(
                     input_file_path=src,
-                    output_file_path=before_ext.sub('_' + '_'.join(
-                        [time_helper.strftime(product.contract_date, r'%Y%m%d'),
-                         product.customer_name,
-                         joint_guarantor.name
-                         ]
-                    ), dst, 1),
+                    output_file_path=output_file_path,
                     replace_dict=ChainMap(
                         {  # product_input は未加工のsplit前のものが入っているので、こちらでうわがき
                             "連帯保証人名": joint_guarantor.name,
@@ -1002,6 +1047,7 @@ class ChohyoGenerator:
                         self.config.get_kv_for_product(
                             product.name, form_no, product.state)
                     ))
+                word_to_pdf_2_pages_per_sheet(output_file_path, os.path.splitext(output_file_path)[0] + ".pdf")
 
     def _gen_kinsho(self, product: Product):
         form_no = 4
@@ -1072,7 +1118,7 @@ class ChohyoGenerator:
             product.table_kv,
             product.product_input
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
     def _gen_kinsho_chacot(self, products, product: Product):
@@ -1199,7 +1245,7 @@ class ChohyoGenerator:
             product.table_kv,
             product.product_input
         ))
-        convert(dest, os.path.splitext(dest)[0] + ".pdf")
+        word_to_pdf_2_pages_per_sheet(dest, os.path.splitext(dest)[0] + ".pdf")
         logging_output(src, dest)
 
 
