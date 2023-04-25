@@ -19,10 +19,11 @@ from openpyxl.styles.fills import PatternFill
 from openpyxl.worksheet.worksheet import Worksheet
 from os import times
 from typing import Any, ChainMap, Iterable, List, Optional, Tuple, cast
-from docx2pdf import convert
 import win32print
 import win32api
 import win32com.client as win32
+
+from collections import ChainMap
 
 import functools
 import itertools
@@ -89,14 +90,18 @@ def excel_to_pdf(excel_path, pdf_path):
     """
     ExcelからPDFに変換する関数
     """
-    excel = win32.Dispatch("Excel.Application")
+
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+    # excel = win32.Dispatch("Excel.Application")
     excel.Visible = False
     excel.DisplayAlerts = False
+    # xlTypePDF定数を取得
+    xlTypePDF = win32.constants.xlTypePDF
 
     try:
         file = excel.Workbooks.Open(os.path.abspath(excel_path))
         file.Worksheets(1).Select()
-        file.ActiveSheet.ExportAsFixedFormat(0, os.path.abspath(pdf_path))
+        file.ActiveSheet.ExportAsFixedFormat(xlTypePDF, os.path.abspath(pdf_path))
     except Exception as e:
         print(f"Failed to convert {excel_path} to PDF: {e}")
     finally:
@@ -730,6 +735,28 @@ class ChohyoGenerator:
 
             docx.save(dest)
             new_src = dest
+
+
+
+        # 辞書内情報確認
+        chain_map = ChainMap(
+            product.table_kv,
+            product.product_input,
+            self.config.get_kv_for_product(product.name, form_no, product.state)
+        )
+
+        # for key, value in self.config.get_kv_for_product(product.name, form_no, product.state).items():
+        #     if value is not None:
+        #         print(f"{key}: {value}")
+
+        for key, value in vars(product.product_input).items():
+            if value is not None:
+                print(f"{key}: {value}")
+
+
+
+
+
 
         replace.replace(new_src, dest, ChainMap(
             product.table_kv,
